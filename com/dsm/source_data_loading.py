@@ -54,4 +54,4 @@ if __name__ == '__main__':
 
     spark.stop()
 
-# spark-submit --packages "org.apache.hadoop:hadoop-aws:2.7.4,mysql:mysql-connector-java:8.0.15,com.springml:spark-sftp_2.11:1.1.1" dataframe/ingestion/files/csv_df.py
+# spark-submit --master yarn --packages "org.apache.hadoop:hadoop-aws:2.7.4,mysql:mysql-connector-java:8.0.15,com.springml:spark-sftp_2.11:1.1.1" com/dsm/source_data_loading.py
