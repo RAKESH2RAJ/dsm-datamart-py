@@ -19,7 +19,7 @@ def read_from_mysql(spark, app_secret, app_conf, src):
         .options(**jdbcParams) \
         .load()
 
-def read_from_sftp(spark, app_secret, app_conf):
+def read_from_sftp(spark, app_secret, app_conf, src):
     current_dir = os.path.abspath(os.path.dirname(__file__))
     return spark.read \
         .format("com.springml.spark.sftp") \
@@ -29,7 +29,7 @@ def read_from_sftp(spark, app_secret, app_conf):
         .option("pem", os.path.abspath(current_dir + "/../../" + app_secret["sftp_conf"]["pem"])) \
         .option("fileType", "csv") \
         .option("delimiter", "|") \
-        .load(app_conf["sftp_conf"]["directory"] + "/" + app_conf["sftp_conf"]["filename"])
+        .load(app_conf["sftp_conf"]["directory"] + "/" + app_conf[src]["sftp_conf"]["filename"])
 
 
 def get_redshift_jdbc_url(redshift_config: dict):

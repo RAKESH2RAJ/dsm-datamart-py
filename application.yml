@@ -18,6 +18,7 @@ OL:
 1CP:
   s3_conf:
     s3_bucket: test-sanju
+    filename: KC_Extract_1_20171009.csv
 
 s3_conf:
   s3_bucket: test-sanju
