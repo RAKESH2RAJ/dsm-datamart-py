@@ -1,4 +1,6 @@
 source_list:
+#  - SB
+#  - OL
   - 1CP
 
 SB:
@@ -6,13 +8,20 @@ SB:
     dbtable: testdb.TRANSACTIONSYNC
     partition_column: App_Transaction_Id
 
+OL:
+  sftp_conf:
+      filetype: csv
+      delimiter: |
+      directory: /home/ubuntu/data
+      filename: receipts_delta_GBR_14_10_2017.csv
+
+1CP:
+  s3_conf:
+    s3_bucket: test-sanju
+
 s3_conf:
   s3_bucket: test-sanju
 
-sftp_conf:
-    filetype: csv
-    delimiter: |
-    directory: /home/ubuntu/data
 
 mongodb_config:
   database: school

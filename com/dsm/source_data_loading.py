@@ -2,6 +2,7 @@ from pyspark.sql import SparkSession
 import os.path
 import yaml
 import com.dsm.utils.utilities as ut
+from pyspark.sql import functions as f
 
 if __name__ == '__main__':
     # Create the SparkSession
@@ -30,36 +31,11 @@ if __name__ == '__main__':
     src_list = app_conf["source_list"]
     for src in src_list:
         if src == 'SB':
-            jdbcParams = {"url": ut.get_mysql_jdbc_url(app_secret),
-                          "lowerBound": "1",
-                          "upperBound": "100",
-                          "dbtable": app_conf[src]["mysql_conf"]["dbtable"],
-                          "numPartitions": "2",
-                          "partitionColumn": app_conf[src]["mysql_conf"]["partition_column"],
-                          "user": app_secret["mysql_conf"]["username"],
-                          "password": app_secret["mysql_conf"]["password"]
-                          }
-
-            # use the ** operator/un-packer to treat a python dictionary as **kwargs
-            print("\nReading data from MySQL DB using SparkSession.read.format(),")
-            txnDF = spark \
-                .read.format("jdbc") \
-                .option("driver", "com.mysql.cj.jdbc.Driver") \
-                .options(**jdbcParams) \
-                .load()
-
-            txnDF.show()
+            txn_df = ut.read_from_mysql(spark, app_secret, app_conf, src) \
+                .withColumn("ins_dt", f.current_date())
+            txn_df.show()
 
         if src == 'OL':
-            olTxnDf = spark.read \
-                .format("com.springml.spark.sftp") \
-                .option("host", app_secret["sftp_conf"]["hostname"]) \
-                .option("port", app_secret["sftp_conf"]["port"]) \
-                .option("username", app_secret["sftp_conf"]["username"]) \
-                .option("pem", os.path.abspath(current_dir + "/../../" + app_secret["sftp_conf"]["pem"])) \
-                .option("fileType", "csv") \
-                .option("delimiter", "|") \
-                .load(app_conf["sftp_conf"]["directory"] + "/receipts_delta_GBR_14_10_2017.csv")
 
             olTxnDf.show(5, False)
 
