@@ -1,5 +1,4 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, IntegerType, BooleanType,DoubleType
 import os.path
 import yaml
 import com.dsm.utils.utilities as ut
@@ -40,7 +39,6 @@ if __name__ == '__main__':
                           "user": app_secret["mysql_conf"]["username"],
                           "password": app_secret["mysql_conf"]["password"]
                           }
-            # print(jdbcParams)
 
             # use the ** operator/un-packer to treat a python dictionary as **kwargs
             print("\nReading data from MySQL DB using SparkSession.read.format(),")
@@ -51,6 +49,19 @@ if __name__ == '__main__':
                 .load()
 
             txnDF.show()
+
+        if src == 'OL':
+            olTxnDf = spark.read \
+                .format("com.springml.spark.sftp") \
+                .option("host", app_secret["sftp_conf"]["hostname"]) \
+                .option("port", app_secret["sftp_conf"]["port"]) \
+                .option("username", app_secret["sftp_conf"]["username"]) \
+                .option("pem", os.path.abspath(current_dir + "/../../" + app_secret["sftp_conf"]["pem"])) \
+                .option("fileType", "csv") \
+                .option("delimiter", "|") \
+                .load(app_conf["sftp_conf"]["directory"] + "/receipts_delta_GBR_14_10_2017.csv")
+
+            olTxnDf.show(5, False)
 
     spark.stop()
 
