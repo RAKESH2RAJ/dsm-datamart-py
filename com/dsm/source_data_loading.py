@@ -63,6 +63,12 @@ if __name__ == '__main__':
 
             olTxnDf.show(5, False)
 
-    spark.stop()
+        if src == '1CP':
+            cp_df = spark.read \
+                .parquet("s3a://" + app_conf["s3_conf"]["s3_bucket"] + "/NYC_OMO") \
+                .repartition(5)
+
+
+        spark.stop()
 
 # spark-submit --master yarn --packages "org.apache.hadoop:hadoop-aws:2.7.4,mysql:mysql-connector-java:8.0.15,com.springml:spark-sftp_2.11:1.1.1" com/dsm/source_data_loading.py
