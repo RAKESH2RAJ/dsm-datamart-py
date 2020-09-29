@@ -2,6 +2,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, IntegerType, BooleanType,DoubleType
 import os.path
 import yaml
+import com.dsm.utils.utilities as ut
 
 if __name__ == '__main__':
     # Create the SparkSession
@@ -27,48 +28,30 @@ if __name__ == '__main__':
     hadoop_conf.set("fs.s3a.access.key", app_secret["s3_conf"]["access_key"])
     hadoop_conf.set("fs.s3a.secret.key", app_secret["s3_conf"]["secret_access_key"])
 
-    print("\nCreating dataframe ingestion CSV file using 'SparkSession.read.format()'")
+    src_list = app_conf["source_list"]
+    for src in src_list:
+        if src == 'SB':
+            jdbcParams = {"url": ut.get_mysql_jdbc_url(app_secret),
+                          "lowerBound": "1",
+                          "upperBound": "100",
+                          "dbtable": app_conf[src]["mysql_conf"]["dbtable"],
+                          "numPartitions": "2",
+                          "partitionColumn": app_conf[src]["mysql_conf"]["partition_column"],
+                          "user": app_secret["mysql_conf"]["username"],
+                          "password": app_secret["mysql_conf"]["password"]
+                          }
+            # print(jdbcParams)
 
-    fin_schema = StructType() \
-        .add("id", IntegerType(), True) \
-        .add("has_debt", BooleanType(), True) \
-        .add("has_financial_dependents", BooleanType(), True) \
-        .add("has_student_loans", BooleanType(), True) \
-        .add("income", DoubleType(), True)
+            # use the ** operator/un-packer to treat a python dictionary as **kwargs
+            print("\nReading data from MySQL DB using SparkSession.read.format(),")
+            txnDF = spark \
+                .read.format("jdbc") \
+                .option("driver", "com.mysql.cj.jdbc.Driver") \
+                .options(**jdbcParams) \
+                .load()
 
-    fin_df = spark.read \
-        .option("header", "false") \
-        .option("delimiter", ",") \
-        .format("csv") \
-        .schema(fin_schema) \
-        .load("s3a://" + app_conf["s3_conf"]["s3_bucket"] + "/finances.csv")
-
-    fin_df.printSchema()
-    fin_df.show()
-
-    print("Creating dataframe ingestion CSV file using 'SparkSession.read.csv()',")
-
-    finance_df = spark.read \
-        .option("mode", "DROPMALFORMED") \
-        .option("header", "false") \
-        .option("delimiter", ",") \
-        .option("inferSchema", "true") \
-        .csv("s3a://" + app_conf["s3_conf"]["s3_bucket"] + "/finances.csv") \
-        .toDF("id", "has_debt", "has_financial_dependents", "has_student_loans", "income")
-
-    print("Number of partitions = " + str(fin_df.rdd.getNumPartitions))
-    finance_df.printSchema()
-    finance_df.show()
-
-    finance_df \
-        .repartition(2) \
-        .write \
-        .partitionBy("id") \
-        .mode("overwrite") \
-        .option("header", "true") \
-        .option("delimiter", "~") \
-        .csv("s3a://" + app_conf["s3_conf"]["s3_bucket"] + "/fin")
+            txnDF.show()
 
     spark.stop()
 
-# spark-submit --packages "org.apache.hadoop:hadoop-aws:2.7.4" dataframe/ingestion/files/csv_df.py
+# spark-submit --packages "org.apache.hadoop:hadoop-aws:2.7.4,mysql:mysql-connector-java:8.0.15,com.springml:spark-sftp_2.11:1.1.1" dataframe/ingestion/files/csv_df.py
